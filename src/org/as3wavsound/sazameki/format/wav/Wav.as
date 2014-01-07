@@ -79,27 +79,49 @@ package org.as3wavsound.sazameki.format.wav {
 		 * @author Benny Bottema (sanitized code)
 		 */
 		private function resampleSamples(sourceSamples:Vector.<Number>, targetSamples:Vector.<Number>, newSize:int, sourceRate:int, targetRate:int = 44100):void {
-			// we need to expand the sample rate from whatever it is to targetRate Khz.  This code
-			// is assuming that the sample rate will be < targetRate Khz.
-			var multiplier:Number = targetRate / sourceRate;
+			var quality:int = 4;
+			var srcLength:uint = sourceSamples.length;
+			var destLength:uint = sourceSamples.length*targetRate/sourceRate;
+			var dx:Number = srcLength/destLength;
 			
-			// convert the data
-			var measure:int = targetRate;
-			var sourceIndex:int = 0;
-			var targetIndex:int = 0;
-	
-			while (targetIndex < newSize) {
-				if (measure >= sourceRate) {
-					var increment:Number = 0;
-					if (targetIndex > 0 && sourceIndex < sourceSamples.length - 1) {
-						increment = (sourceSamples[sourceIndex + 1] - sourceSamples[sourceIndex]) / multiplier;
+			// fmax : nyqist half of destination sampleRate
+			// fmax / fsr = 0.5;
+			var fmaxDivSR:Number = 0.5;
+			var r_g:Number = 2 * fmaxDivSR;
+			
+			// Quality is half the window width
+			var wndWidth2:int = quality;
+			var wndWidth:int = quality*2;
+			
+			var x:Number = 0;
+			var i:uint, j:uint;
+			var r_y:Number;
+			var tau:int;
+			var r_w:Number;
+			var r_a:Number;
+			var r_snc:Number;
+			for (i=0;i<destLength;++i)
+			{
+				r_y = 0.0;
+				for (tau=-wndWidth2;tau < wndWidth2;++tau)
+				{
+					// input sample index
+					j = (int)(x+tau);
+					
+					// Hann Window. Scale and calculate sinc
+					r_w = 0.5 - 0.5 * Math.cos(2*Math.PI*(0.5 + (j-x)/wndWidth));
+					r_a = 2*Math.PI*(j-x)*fmaxDivSR;
+					r_snc = 1.0;
+					if (r_a != 0)
+						r_snc = Math.sin(r_a)/r_a;
+					
+					if ((j >= 0) && (j < srcLength))
+					{
+						r_y += r_g * r_w * r_snc * sourceSamples[j];
 					}
-					targetSamples[targetIndex++] = sourceSamples[sourceIndex] + increment;
-					measure -= sourceRate;
-				} else {
-					sourceIndex++;
-					measure += targetRate;
 				}
+				targetSamples[i] = r_y;
+				x += dx;
 			}
 		}
 	}
