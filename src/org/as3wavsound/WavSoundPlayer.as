@@ -74,7 +74,7 @@ package org.as3wavsound {
 		// The size of the master sample buffer used for playback.
 		// Too small: the sound will have a jittery playback.
 		// Too big: the sound will have high latencies (loading, stopping, playing, etc.). 
-		public static var MAX_BUFFERSIZE:Number = 8192;
+		public static var MAX_BUFFERSIZE:Number = 2048;
 
 		// the master samples buffer in which all seperate Wavsounds are mixed into, always stereo at 44100Hz and bitrate 16
 		private const sampleBuffer:AudioSamples = new AudioSamples(new AudioSetting(), MAX_BUFFERSIZE);
